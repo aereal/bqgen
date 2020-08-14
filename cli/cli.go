@@ -1,15 +1,18 @@
 package cli
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
+	"github.com/aereal/bqgen/source/mysql"
 	"github.com/aereal/bqgen/sql"
 )
 
@@ -33,14 +36,19 @@ func (c *App) Run(argv []string) error {
 	fs.SetOutput(c.errOut)
 	var (
 		tableOptions string
+		dsn          string
 	)
 	fs.StringVar(&tableOptions, "table-options", "", "additional table options")
+	fs.StringVar(&dsn, "dsn", "", "DSN string")
 	err := fs.Parse(argv[1:])
 	if err == flag.ErrHelp {
 		return nil
 	}
 	if err != nil {
 		return err
+	}
+	if dsn != "" {
+		return c.cmdMySQL(dsn, fs.Args()...)
 	}
 	return c.cmdMain(tableOptions, fs.Args()...)
 }
@@ -63,6 +71,22 @@ func (c *App) cmdMain(tableOptions string, args ...string) error {
 		return err
 	}
 	fmt.Fprintln(c.out, ddl)
+	return nil
+}
+
+func (c *App) cmdMySQL(dsn string, args ...string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	src := mysql.NewMySQLSource(dsn)
+	tables, err := src.Populate(ctx)
+	if err != nil {
+		return err
+	}
+	for _, t := range tables {
+		for _, c := range t.Columns {
+			log.Printf("table:%s %#v", t.Name, c)
+		}
+	}
 	return nil
 }
 

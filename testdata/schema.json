@@ -1,0 +1,22 @@
+[
+  {
+    "type": "STRING",
+    "name": "Kind",
+    "mode": "REQUIRED"
+  },
+  {
+    "type": "DATE",
+    "name": "Date",
+    "mode": "REQUIRED"
+  },
+  {
+    "type": "STRING",
+    "name": "Course",
+    "mode": "REQUIRED"
+  },
+  {
+    "type": "INTEGER",
+    "name": "Count",
+    "mode": "REQUIRED"
+  }
+]
